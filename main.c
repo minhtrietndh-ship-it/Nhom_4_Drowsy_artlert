@@ -127,7 +127,7 @@ void add_to_history(sleep_time_t t) {
     xSemaphoreTake(text_mutex, portMAX_DELAY);
     
     sleep_history[head_idx] = t;
-    head_idx = (head_idx + 1) % MAX_HISTORY; // Quay vòng chỉ số
+    head_idx = (head_idx + 1) % MAX_HISTORY; 
     
     if (count_history < MAX_HISTORY) {
         count_history++;
@@ -142,9 +142,9 @@ void update_history_text() {
 
     xSemaphoreTake(text_mutex, portMAX_DELAY);
     
-    // Duyệt từ phần tử mới nhất đến cũ nhất (tùy bạn chọn thứ tự)
+    
     for (int i = 0; i < count_history; i++) {
-        // Tính toán chỉ số thực tế trong mảng vòng
+       
         int idx = (head_idx - 1 - i + MAX_HISTORY) % MAX_HISTORY;
         
         len += snprintf(msg + len, sizeof(msg) - len,
@@ -189,7 +189,7 @@ void reset_task(void *pvParameters)
 {
     while (1)
     {
-        // chờ ISR signal
+       
         if (xSemaphoreTake(reset_semaphore, portMAX_DELAY) == pdTRUE)
         {
             ESP_LOGW(TAG, "RESET → NORMAL");
@@ -206,7 +206,6 @@ void IRAM_ATTR button_isr(void *arg)
     BaseType_t hpw = pdFALSE;
         uint32_t now = xTaskGetTickCountFromISR();
 
-    // debounce 200ms
     if ((now - last_btn_time) < pdMS_TO_TICKS(200)) {
         return;
     }
@@ -601,7 +600,7 @@ void app_main(void)
 
     timer2 = xTimerCreate("t2", pdMS_TO_TICKS(5000),
                           pdFALSE, NULL, timer2_cb);
-    // TASK
+
     xTaskCreate(state_task,
                 "state_task",
                 8192,
