@@ -1,5 +1,4 @@
-// publish MQTT
-// ham publish MQTT
+
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -19,7 +18,7 @@
 #include "esp_sntp.h"
 #include "i2c_lcd.h"
 
-// ================= CONFIG =================
+
 #define WIFI_SSID "A25"
 #define WIFI_PASS "123456789"
 
@@ -46,14 +45,14 @@ typedef struct {
     int min;
 } sleep_time_t;
 sleep_time_t sleep_history[MAX_HISTORY];
-int head_idx = 0;  // Vị trí sẽ ghi dữ liệu tiếp theo
-int count_history = 0; // Số lượng phần tử hiện có
+int head_idx = 0;  
+int count_history = 0; 
 static const char *TAG = "APP";
 char queue_text[512];
 
 
 
-// ================= STATE =================
+
 typedef enum {
     STATE_NORMAL,
     STATE_WARNING,
@@ -62,7 +61,7 @@ typedef enum {
 
 volatile system_state_t STATE = STATE_NORMAL;
 
-// ================= EVENT FLAGS =================
+
 #define EVT_MQTT_SLEEP  (1 << 0)
 #define EVT_MQTT_AWAKE  (1 << 1)
 #define EVT_BUTTON      (1 << 2)
@@ -70,7 +69,7 @@ volatile system_state_t STATE = STATE_NORMAL;
 #define EVT_TIMER2  (1 << 4)
 #define EVT_SHOW_QUEUE  (1 << 5)
 
-// ================= HANDLE =================
+
 TaskHandle_t state_task_handle;
 
 TimerHandle_t timer1;   // 3s → WARNING
@@ -78,9 +77,6 @@ TimerHandle_t timer2;   // 5s → NORMAL
 
 esp_mqtt_client_handle_t client;
 
-// ===================================================
-// TIMER CALLBACK
-// ===================================================
 
 
 
@@ -147,9 +143,9 @@ void update_history_text() {
 
     xSemaphoreTake(text_mutex, portMAX_DELAY);
     
-    // Duyệt từ phần tử mới nhất đến cũ nhất (tùy bạn chọn thứ tự)
+
     for (int i = 0; i < count_history; i++) {
-        // Tính toán chỉ số thực tế trong mảng vòng
+
         int idx = (head_idx - 1 - i + MAX_HISTORY) % MAX_HISTORY;
         
         len += snprintf(msg + len, sizeof(msg) - len,
@@ -194,7 +190,6 @@ void reset_task(void *pvParameters)
 {
     while (1)
     {
-        // chờ ISR signal
         if (xSemaphoreTake(reset_semaphore, portMAX_DELAY) == pdTRUE)
         {
             ESP_LOGW(TAG, "RESET → NORMAL");
@@ -211,7 +206,6 @@ void IRAM_ATTR button_isr(void *arg)
     BaseType_t hpw = pdFALSE;
         uint32_t now = xTaskGetTickCountFromISR();
 
-    // debounce 200ms
     if ((now - last_btn_time) < pdMS_TO_TICKS(200)) {
         return;
     }
@@ -232,7 +226,6 @@ void gpio_init_all(void)
 {
     gpio_config_t io_conf = {};
 
-    // ===== LED OUTPUT =====
     io_conf.pin_bit_mask = (1ULL << LED_GPIO);
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
@@ -247,7 +240,7 @@ void gpio_init_all(void)
     io_conf.intr_type = GPIO_INTR_DISABLE;
     gpio_config(&io_conf);
 
-    // ===== BUTTON INPUT + INTERRUPT =====
+
     io_conf.pin_bit_mask = (1ULL << BTN_GPIO);
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
@@ -255,14 +248,14 @@ void gpio_init_all(void)
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
     gpio_config(&io_conf);
 
-    // ===== RESET BUTTON INPUT + INTERRUPT =====
+ 
     io_conf.pin_bit_mask = (1ULL << RESET_GPIO);
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
     gpio_config(&io_conf);
-    // ===== ISR =====
+
     gpio_install_isr_service(0);
     gpio_isr_handler_add(BTN_GPIO, button_isr, (void*) BTN_GPIO);
     gpio_isr_handler_add(RESET_GPIO, reset_isr, (void*) RESET_GPIO);
@@ -295,9 +288,7 @@ void timer2_cb(TimerHandle_t xTimer)
     xTaskNotify(state_task_handle, EVT_TIMER2, eSetBits);
 }
 
-// ===================================================
-// MQTT HANDLER
-// ===================================================
+
 static void mqtt_event_handler(void *handler_args,
                                esp_event_base_t base,
                                int32_t event_id,
@@ -330,9 +321,7 @@ static void mqtt_event_handler(void *handler_args,
     }
 }
 
-// ===================================================
-// WIFI + MQTT START
-// ===================================================
+
 void start_mqtt(void)
 {
     esp_mqtt_client_config_t cfg = {
@@ -418,14 +407,14 @@ void state_task(void *pvParameters)
             portMAX_DELAY
         );
 
-        // ================= MQTT =================
+    
         xSemaphoreTake(state_mutex, portMAX_DELAY);
         if ((notifyValue & EVT_MQTT_SLEEP)&&(STATE == STATE_NORMAL))
         {
             ESP_LOGI(TAG, "MQTT SLEEP");
 
             xTimerStart(timer1, 0);   // 3s → WARNING
-            //xTimerStop(timer2, 0);
+         
         }
         xSemaphoreGive(state_mutex);
         if (notifyValue & EVT_MQTT_AWAKE)
@@ -433,10 +422,9 @@ void state_task(void *pvParameters)
             ESP_LOGI(TAG, "MQTT AWAKE");
             xTimerStop(timer1,0);
             
-            //xTimerStart(timer2, 0);   // 5s → NORMAL
+      
         }
 
-        // ================= BUTTON =================
         if (notifyValue & EVT_BUTTON)
         {
             xSemaphoreTake(state_mutex, portMAX_DELAY);
@@ -525,9 +513,7 @@ void lcd_task(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
-// ===================================================
-// BUZZER TASK (optional)
-// ===================================================
+
 void buzzer_task(void *pvParameters)
 {
 
@@ -597,18 +583,15 @@ void led_task(void *pvParameters)
     }
 }
 
-// ===================================================
-// MAIN
-// ===================================================
+
 void app_main(void)
 {
     nvs_flash_init();
     gpio_init_all();
     wifi_init();
     wait_for_time();
-    lcd_init();                             // Initialize the LCD
-    lcd_clear();                            // Clear the LCD screen 
-    // TIMER
+    lcd_init();                             
+    lcd_clear();                         
     text_mutex = xSemaphoreCreateMutex();
     reset_semaphore = xSemaphoreCreateBinary();
     state_mutex = xSemaphoreCreateMutex();
@@ -643,9 +626,7 @@ void app_main(void)
                 NULL,
                 5,
                 NULL);
-    // tạo semaphore
 
-// tạo reset task
 xTaskCreate(reset_task,
             "reset_task",
             2048,
@@ -653,6 +634,5 @@ xTaskCreate(reset_task,
             6,
             NULL);
 
-    // WIFI + MQTT
   
 }
