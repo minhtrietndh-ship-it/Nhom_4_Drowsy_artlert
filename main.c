@@ -495,14 +495,14 @@ void lcd_task(void *pvParameters)
         {
             lcd_clear();
             lcd_put_cursor(0, 0);
-            lcd_send_string("Status: WARNING");
+            lcd_send_string("CANH BAO NGU GAT");
             
         }
         else if (STATE == STATE_REMIND)
         {
             lcd_clear();
             lcd_put_cursor(0, 0);
-            lcd_send_string("Status: REMIND");
+            lcd_send_string("CHU Y AN TOAN");
             
         }
         get_time_str(buffer);
