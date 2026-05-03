@@ -605,7 +605,7 @@ void app_main(void)
                 "state_task",
                 8192,
                 NULL,
-                5,
+                6,
                 &state_task_handle);
 
     xTaskCreate(buzzer_task,
@@ -631,7 +631,7 @@ xTaskCreate(reset_task,
             "reset_task",
             2048,
             NULL,
-            6,
+            7,
             NULL);
 
 
