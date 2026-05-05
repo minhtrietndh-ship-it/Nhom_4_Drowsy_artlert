@@ -37,7 +37,7 @@ uint32_t last_sleep_time = 0;
 SemaphoreHandle_t reset_semaphore;   
 SemaphoreHandle_t state_mutex;       
 SemaphoreHandle_t text_mutex;
-#define MAX_HISTORY 5
+#define MAX_HISTORY 2
 typedef struct {
     int day;
     int month;
